@@ -1,3 +1,4 @@
+const jwt= require('jsonwebtoken');
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
@@ -10,20 +11,36 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 
-// Session middleware (TODO: Replace with JWT)
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        secure: false,
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
-}));
+// Session JWT Functionality (TODO: Replace with JWT)
+const token = jwt.sign(
+    {
+        id: user.id,
+        email: user.email,
+        role: user.role
+    },
+process.env.JWT_SECRET,
+{expiresIn: process.env.JWT_EXPIRES_IN }
+);
+
+res.json({ token, user });
+
+
+
 
 // TODO: Create JWT middleware to replace session auth
 function requireAuth(req, res, next) {
-    if (req.session && req.session.userId) {
+   const authHeader = req.headers.authorization;
+
+   if (!authHeader) {
+    return res.status(401).json({error: 'No token provided'});
+   }
+
+   const token = authHeader.split(' ')[1];
+
+   try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decode
+   }
         req.user = {
             id: req.session.userId,
             name: req.session.userName,
