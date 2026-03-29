@@ -1,104 +1,100 @@
 const bcrypt = require('bcryptjs');
-const { db, User, Project, Task } = require('./setup');
+const { db, User, Project, Task } = require('./setup'); 
 
 async function seedDatabase() {
     try {
-        // Force sync to reset database
+        // 1. Sync and Reset the database
         await db.sync({ force: true });
         console.log('Database reset successfully.');
 
-        // Create sample users
+        // 2. Hash Password once for all seed users
         const hashedPassword = await bcrypt.hash('password123', 10);
-        
-        const users = await User.bulkCreate([
-            {
-                name: 'John Employee',
-                email: 'john@company.com',
-                password: hashedPassword
-                // TODO: Add role: 'employee'
 
+        // 3. Create Users individually to capture their IDs for relations
+        console.log('Creating users...');
+        const john = await User.create({
+            name: 'John Employee',
+            email: 'john@company.com',
+            password: hashedPassword,
+            role: 'employee'
+        });
 
-            },
-            {
-                name: 'Sarah Manager',
-                email: 'sarah@company.com',
-                password: hashedPassword
-                // TODO: Add role: 'manager'
+        const sarah = await User.create({
+            name: 'Sarah Manager',
+            email: 'sarah@company.com',
+            password: hashedPassword,
+            role: 'manager'
+        });
 
+        const mike = await User.create({
+            name: 'Mike Admin',
+            email: 'mike@company.com',
+            password: hashedPassword,
+            role: 'admin'
+        });
 
-            },
-            {
-                name: 'Mike Admin',
-                email: 'mike@company.com',
-                password: hashedPassword
-                // TODO: Add role: 'admin'
+        // 4. Create projects
+        console.log('Creating projects...');
+        const websiteProject = await Project.create({
+            name: 'Website Redesign',
+            description: 'Complete overhaul of company website',
+            managerId: sarah.id,
+            status: 'active'
+        });
 
-                
-            }
-        ]);
+        const mobileProject = await Project.create({
+            name: 'Mobile App Development',
+            description: 'New mobile app for customers',
+            managerId: sarah.id,
+            status: 'active'
+        });
 
-        // Create sample projects
-        const projects = await Project.bulkCreate([
-            {
-                name: 'Website Redesign',
-                description: 'Complete overhaul of company website',
-                managerId: users[1].id, // Sarah Manager
-                status: 'active'
-            },
-            {
-                name: 'Mobile App Development',
-                description: 'New mobile app for customers',
-                managerId: users[1].id, // Sarah Manager
-                status: 'active'
-            },
-            {
-                name: 'Database Migration',
-                description: 'Migrate legacy database to new system',
-                managerId: users[2].id, // Mike Admin
-                status: 'planning'
-            }
-        ]);
+        const dbProject = await Project.create({
+            name: 'Database Migration',
+            description: 'Migrate legacy database to new system',
+            managerId: mike.id,
+            status: 'planning'
+        });
 
-        // Create sample tasks
+        // 5. Create tasks
+        console.log('Creating tasks...');
         await Task.bulkCreate([
             {
                 title: 'Design homepage mockup',
                 description: 'Create wireframes and mockups for new homepage',
-                projectId: projects[0].id,
-                assignedUserId: users[0].id, // John Employee
+                projectId: websiteProject.id,
+                assignedUserId: john.id,
                 status: 'in-progress',
                 priority: 'high'
             },
             {
                 title: 'Set up development environment',
                 description: 'Configure local development setup',
-                projectId: projects[1].id,
-                assignedUserId: users[0].id, // John Employee
+                projectId: mobileProject.id,
+                assignedUserId: john.id,
                 status: 'completed',
                 priority: 'medium'
             },
             {
                 title: 'Review database schema',
                 description: 'Analyze current database structure',
-                projectId: projects[2].id,
-                assignedUserId: users[1].id, // Sarah Manager
+                projectId: dbProject.id,
+                assignedUserId: sarah.id,
                 status: 'pending',
                 priority: 'high'
             }
         ]);
 
         console.log('Database seeded successfully!');
-        console.log('Sample users created:');
-        console.log('- john@company.com (Employee)');
-        console.log('- sarah@company.com (Manager)');
-        console.log('- mike@company.com (Admin)');
-        console.log('All passwords: password123');
-        
     } catch (error) {
         console.error('Error seeding database:', error);
     } finally {
+        // Close the connection so the script exits properly
         await db.close();
     }
 }
 
-seedDatabase();
+// Execute the seeding script
+seedDatabase()
+    .then(() => console.log("Process finished successfully."))
+    .catch(err => console.error("Process failed:", err));

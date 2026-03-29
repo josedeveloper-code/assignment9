@@ -3,12 +3,24 @@ require('dotenv').config();
 
 // Initialize database connection
 const db = new Sequelize({
-    dialect: process.env.DB_TYPE,
-    storage: `database/${process.env.DB_NAME}` || 'database/company_projects.db',
+    dialect: 'sqlite', // match your .env
+    storage: `./database/${process.env.DB_NAME || 'task_management.db'}`,
     logging: false
 });
 
 // User Model
+
+/ * ......... */ { 
+    username: {
+        type: DataTypes.TEXT, 
+        allowNull: false, 
+        unique: true, 
+    }, 
+} /* ... */ 
+
+
+
+
 const User = db.define('User', {
     id: {
         type: DataTypes.INTEGER,
@@ -25,10 +37,18 @@ const User = db.define('User', {
         unique: true
     },
     password: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING,n
         allowNull: false
     },
-    // TODO: Add role field (employee, manager, admin)
+    // IMPLEMENTED: Role field with validation (Step 11)
+    role: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'employee',
+        validate: {
+            isIn: [['employee', 'manager', 'admin']] // Only these 3 allowed
+        }
+    }
 });
 
 // Project Model
@@ -77,7 +97,7 @@ const Task = db.define('Task', {
     }
 });
 
-// Define Relationships
+// --- RELATIONSHIPS ---
 User.hasMany(Project, { foreignKey: 'managerId', as: 'managedProjects' });
 Project.belongsTo(User, { foreignKey: 'managerId', as: 'manager' });
 
@@ -87,21 +107,7 @@ Task.belongsTo(Project, { foreignKey: 'projectId' });
 User.hasMany(Task, { foreignKey: 'assignedUserId', as: 'assignedTasks' });
 Task.belongsTo(User, { foreignKey: 'assignedUserId', as: 'assignedUser' });
 
-// Initialize database
-async function initializeDatabase() {
-    try {
-        await db.authenticate();
-        console.log('Database connection established successfully.');
-        
-        await db.sync({ force: false });
-        console.log('Database synchronized successfully.');
-    } catch (error) {
-        console.error('Unable to connect to database:', error);
-    }
-}
-
-initializeDatabase();
-
+// Export models
 module.exports = {
     db,
     User,
