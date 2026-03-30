@@ -3,24 +3,12 @@ require('dotenv').config();
 
 // Initialize database connection
 const db = new Sequelize({
-    dialect: 'sqlite', // match your .env
+    dialect: 'sqlite', 
     storage: `./database/${process.env.DB_NAME || 'task_management.db'}`,
     logging: false
 });
 
 // User Model
-
-/ * ......... */ { 
-    username: {
-        type: DataTypes.TEXT, 
-        allowNull: false, 
-        unique: true, 
-    }, 
-} /* ... */ 
-
-
-
-
 const User = db.define('User', {
     id: {
         type: DataTypes.INTEGER,
@@ -37,7 +25,7 @@ const User = db.define('User', {
         unique: true
     },
     password: {
-        type: DataTypes.STRING,n
+        type: DataTypes.STRING, // FIXED: Removed the stray 'n'
         allowNull: false
     },
     // IMPLEMENTED: Role field with validation (Step 11)
@@ -46,7 +34,8 @@ const User = db.define('User', {
         allowNull: false,
         defaultValue: 'employee',
         validate: {
-            isIn: [['employee', 'manager', 'admin']] // Only these 3 allowed
+            // This ensures only these three strings can be saved
+            isIn: [['employee', 'manager', 'admin']] 
         }
     }
 });
@@ -114,8 +103,3 @@ module.exports = {
     Project,
     Task
 };
-
-
-{
-    "iss": oauth", 
-    

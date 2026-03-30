@@ -1,36 +1,38 @@
 const bcrypt = require('bcryptjs');
+// Ensure this path matches where your setup.js is located
 const { db, User, Project, Task } = require('./setup'); 
 
 async function seedDatabase() {
     try {
         // 1. Sync and Reset the database
+        // Force: true drops the tables and recreates them with the new 'role' column
         await db.sync({ force: true });
         console.log('Database reset successfully.');
 
         // 2. Hash Password once for all seed users
         const hashedPassword = await bcrypt.hash('password123', 10);
 
-        // 3. Create Users individually to capture their IDs for relations
-        console.log('Creating users...');
+        // 3. Create Users with specific roles (Step 11 requirement)
+        console.log('Creating users with roles...');
         const john = await User.create({
             name: 'John Employee',
             email: 'john@company.com',
             password: hashedPassword,
-            role: 'employee'
+            role: 'employee' // Correctly assigned
         });
 
         const sarah = await User.create({
             name: 'Sarah Manager',
             email: 'sarah@company.com',
             password: hashedPassword,
-            role: 'manager'
+            role: 'manager' // Correctly assigned
         });
 
         const mike = await User.create({
             name: 'Mike Admin',
             email: 'mike@company.com',
             password: hashedPassword,
-            role: 'admin'
+            role: 'admin' // Correctly assigned
         });
 
         // 4. Create projects
@@ -96,5 +98,5 @@ async function seedDatabase() {
 
 // Execute the seeding script
 seedDatabase()
-    .then(() => console.log("Process finished successfully."))
-    .catch(err => console.error("Process failed:", err));
+    .then(() => console.log("Seed process finished successfully."))
+    .catch(err => console.error("Seed process failed:", err));

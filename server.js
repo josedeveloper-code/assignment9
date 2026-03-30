@@ -15,7 +15,6 @@ app.use(express.json());
 const requireAuth = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     
-    // Check if header exists and starts with "Bearer "
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'No token provided' });
     }
@@ -24,7 +23,7 @@ const requireAuth = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // This gives us req.user.id and req.user.role
+        req.user = decoded; 
         next();
     } catch (error) {
         return res.status(401).json({ error: 'Invalid or expired token' });
@@ -32,7 +31,8 @@ const requireAuth = (req, res, next) => {
 };
 
 const requireManager = (req, res, next) => {
-    if (req.user.role === 'manager' || req.user.role === 'admin') {
+    // Allows managers and admins
+    if (req.user && (req.user.role === 'manager' || req.user.role === 'admin')) {
         next();
     } else {
         res.status(403).json({ error: 'Forbidden: Manager access required' });
@@ -40,16 +40,18 @@ const requireManager = (req, res, next) => {
 };
 
 const requireAdmin = (req, res, next) => {
-    if (req.user.role === 'admin') {
+    // STRICTLY admin only
+    if (req.user && req.user.role === 'admin') {
         next();
     } else {
         res.status(403).json({ error: 'Forbidden: Admin access required' });
     }
+    
 };
 
 // --- ROUTES ---
 
-// POST /api/register
+// POST /api/register 
 app.post('/api/register', async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
@@ -61,16 +63,23 @@ app.post('/api/register', async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            role: role || 'employee' // Default to employee
+            role: role || 'employee' 
         });
 
-        res.status(201).json({ message: 'User registered', user: { id: newUser.id, name: newUser.name } });
+        // Generate token for the new user immediately
+        const token = jwt.sign(
+            { id: newUser.id, name: newUser.name, role: newUser.role },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+        );
+
+        res.status(201).json({ message: 'User registered', token, user: { id: newUser.id, name: newUser.name, role: newUser.role } });
     } catch (error) {
         res.status(500).json({ error: 'Registration failed' });
     }
 });
 
-// POST /api/login
+// POST /api/login (Step 7 fixed)
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -83,10 +92,15 @@ app.post('/api/login', async (req, res) => {
         const token = jwt.sign(
             { id: user.id, name: user.name, role: user.role },
             process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+            { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
         );
 
-        res.json({ message: 'Login successful', token });
+        // FIXED: Combined the response into one object // Fixing the Login Authenticated for Successful 
+        res.json({ 
+            message: 'Login successful', 
+            token: token, 
+            user: { id: user.id, name: user.name, role: user.role }
+        });
     } catch (error) {
         res.status(500).json({ error: 'Login failed' });
     }
@@ -112,8 +126,6 @@ app.post('/api/projects', requireAuth, requireManager, async (req, res) => {
         res.status(500).json({ error: 'Project creation failed' });
     }
 });
-
-// ... (Other routes like PUT and DELETE would follow the same pattern)
 
 // Start server
 async function startServer() {
