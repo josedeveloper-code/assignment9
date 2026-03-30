@@ -1,3 +1,5 @@
+// Build Restful App for a Company Users and Company Projects
+
 const jwt = require('jsonwebtoken');
 const express = require('express');
 const bcrypt = require('bcryptjs');
@@ -95,7 +97,7 @@ app.post('/api/login', async (req, res) => {
             { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
         );
 
-        // FIXED: Combined the response into one object // Fixing the Login Authenticated for Successful 
+      // Fixing the Login Authenticated for Successful 
         res.json({ 
             message: 'Login successful', 
             token: token, 
